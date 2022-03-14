@@ -104,6 +104,12 @@ namespace Helper
 
     /// <summary>
     /// Clase para el manejo de los comandos por los que estara compuesta la region de datos de los mensajes.
+    /// Todos los mensajes estaran conformados de la siguiente manera:
+    /// Header: 2 Bytes
+    /// Identificador del emisor: senderIdentification[=]MAC[->]{MacAddress}[*]IP[->]{IPAddress}[*]ID[->]{ID}[*]STATUS[->]{Status.ToString()}[*][|]
+    /// Region de datos
+    /// Footer: 1 Byte
+    /// CRC16: 2 Bytes
     /// </summary>
     public static class ProtocolMessage
     {
