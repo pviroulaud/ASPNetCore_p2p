@@ -93,6 +93,19 @@ namespace TCP
             }
         }
 
+        private String MACLocal;
+        public String MAC_Local 
+        { 
+            get
+            { 
+                return MACLocal; 
+            }
+            set
+            {
+                MACLocal = GetMacAddress().ToString();
+            }
+        }
+
         private Boolean Escuchando;
         public Boolean Esperando_Conexiones
         {

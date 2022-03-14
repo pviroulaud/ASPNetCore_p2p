@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
@@ -130,6 +131,32 @@ namespace TCP
             get
             {
                 return Cliente_Conectado;
+            }
+        }
+
+        private String MACLocal;
+        public String MyProperty
+        {
+            get
+            {
+                return MACLocal;
+            }
+            set
+            {
+                MACLocal = GetMacAddress().ToString();
+            }
+        }
+        private String IPLocal;
+        public String IP_Local
+        {
+            get
+            {
+                string hostname = Dns.GetHostName();
+
+                IPAddress[] estehost = Dns.GetHostAddresses(hostname);
+                IPLocal = estehost[1].ToString();
+
+                return IPLocal;
             }
         }
         #endregion

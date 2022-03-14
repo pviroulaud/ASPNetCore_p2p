@@ -7,6 +7,63 @@ namespace EntidadesNodo
 {
     public class Peer
     {
+        public class PeerDataInvalidException : Exception
+        {
+            public PeerDataInvalidException(string message) : base(message)
+            {
+            }
+        }
+        public Peer()
+        {
+
+        }
+        public Peer(string senderIdentification)
+        {
+            
+            string[] fields = senderIdentification.Split(new string[] { "[*]" }, StringSplitOptions.RemoveEmptyEntries);
+            if (fields.Length == 4)
+            {
+                foreach (var item in fields)
+                {
+                    string[] kvp = item.Split(new string[] { "[->]" }, StringSplitOptions.RemoveEmptyEntries);
+                    if (kvp.Length != 2)
+                    {
+                        throw new PeerDataInvalidException("Peer Data Invalid.");
+                    }
+                    try
+                    {
+                        switch (kvp[0])
+                        {
+                            case "MAC":
+                                macAddr = kvp[1];
+                                break;
+                            case "IP":
+                                ipAddr = kvp[1];
+                                break;
+                            case "STATUS":
+                                state = Convert.ToBoolean(kvp[1]);
+                                break;
+                            case "ID":
+                                id = kvp[1];
+                                break;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        throw new PeerDataInvalidException("Peer Data Invalid.");
+                    }
+                    
+                }
+            }
+            else
+            {
+                throw new PeerDataInvalidException("Peer Data Invalid.");
+            }
+        }
+        public override string ToString()
+        {
+            return $"peerInformation[=]MAC[->]{macAddr}[*]IP[->]{ipAddr}[*]ID[->]{id}[*]STATUS[->]{state.ToString()}[*][|]";
+        }
         public string id { get; set; }
         public string ipAddr { get; set; }
         public bool state { get; set; }
@@ -69,6 +126,11 @@ namespace EntidadesNodo
                 int n=peers.IndexOf(peer);
                 peers[n] = newPeerData;
             }
+            else
+            {
+                Peer newPeer = new Peer() { id = newPeerData.id, ipAddr = newPeerData.ipAddr, macAddr = newPeerData.macAddr, state = newPeerData.state };
+                peers.Add(newPeer);
+            }
         }
 
         public static Peer findPeerByIP(List<Peer> peers,string IP_Address)
@@ -91,5 +153,7 @@ namespace EntidadesNodo
             return (from p in peers where p.state == peerSate select p).ToList();
 
         }
+
+
     }
 }
