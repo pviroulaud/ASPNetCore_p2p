@@ -45,6 +45,16 @@ namespace AppNodo
             srvr.EscucharConexiones();
             Console.WriteLine($"Esperando conexiones en puerto: {srvr.Puerto_Del_servidor}");
 
+
+
+            CLI cli = new CLI("test >",srvr,cl);
+
+            cli.initCLI();
+
+
+
+
+
             while (!cerrarApp) ;
 
 

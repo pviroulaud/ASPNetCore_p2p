@@ -95,6 +95,11 @@ namespace EntidadesNodo
             {
                 rutaNombreArchivo = AppDomain.CurrentDomain.BaseDirectory + "\\peersFile.csv";
             }
+            if (!File.Exists(rutaNombreArchivo))
+            {
+                var f=File.Create(rutaNombreArchivo);
+                f.Close();
+            }
             List<Peer> ret = new List<Peer>();
             StreamReader rd = new StreamReader(rutaNombreArchivo);
             while(!rd.EndOfStream)
