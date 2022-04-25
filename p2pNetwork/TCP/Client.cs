@@ -203,7 +203,9 @@ namespace TCP
             {
                 if (SK_Cliente.Connected)
                 {
-                    Th_LecturaCliente.Abort();
+                    Th_LecturaCliente = null;//Th_LecturaCliente.Abort();
+                    
+
                     SK_Cliente.Close();
                     Cliente_Conectado = false;
                 }
@@ -262,7 +264,7 @@ namespace TCP
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 // Only consider Ethernet network interfaces
-                if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet &&
+                if (((nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet)||(nic.NetworkInterfaceType== NetworkInterfaceType.Wireless80211)) &&
                     nic.OperationalStatus == OperationalStatus.Up)
                 {
                     return nic.GetPhysicalAddress();
@@ -308,16 +310,32 @@ namespace TCP
                             break;
                         }
                     }
-                    catch (Exception ex)
+                    catch (SocketException socEx)
                     {
-                        if ((ex.Message != "Subproceso anulado.") &&
-                            (ex.Message != "Se ha forzado la interrupción de una conexión existente por el host remoto"))
+                        if ( (socEx.ErrorCode != 10053) &&
+                            (socEx.ErrorCode != 10054) &&
+                            (socEx.Message != "Subproceso anulado.") &&
+                            (socEx.Message != "Se ha forzado la interrupción de una conexión existente por el host remoto") &&
+                            (socEx.Message != "Se ha anulado una conexión establecida por el software en su equipo host.."))
                         {
                             if (Error_Conexion != null)
                             {
-                                Error_Conexion(ex);
+                                Error_Conexion(socEx);
                             }
 
+                        }
+                        Cliente_Conectado = false;
+                        if (ConexionTerminada != null)
+                        {
+                            ConexionTerminada();
+                        }
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Error_Conexion != null)
+                        {
+                            Error_Conexion(ex);
                         }
                         Cliente_Conectado = false;
                         if (ConexionTerminada != null)
@@ -338,7 +356,7 @@ namespace TCP
             {
                 //SK_Cliente.Shutdown(SocketShutdown.Both);
                 SK_Cliente = null;
-                Th_LecturaCliente.Abort();
+                Th_LecturaCliente = null;//Th_LecturaCliente.Abort();
             }
             Cliente_Conectado = false;
         }

@@ -137,7 +137,20 @@ namespace EntidadesNodo
                 peers.Add(newPeer);
             }
         }
-
+        public static void updatePeerDataById(List<Peer> peers, string ID, Peer newPeerData)
+        {
+            var peer = (from p in peers where p.id == ID select p).FirstOrDefault();
+            if (peer != null)
+            {
+                int n = peers.IndexOf(peer);
+                peers[n] = newPeerData;
+            }
+            else
+            {
+                Peer newPeer = new Peer() { id = newPeerData.id, ipAddr = newPeerData.ipAddr, macAddr = newPeerData.macAddr, state = newPeerData.state };
+                peers.Add(newPeer);
+            }
+        }
         public static Peer findPeerByIP(List<Peer> peers,string IP_Address)
         {
             return (from p in peers where p.ipAddr == IP_Address select p).FirstOrDefault();

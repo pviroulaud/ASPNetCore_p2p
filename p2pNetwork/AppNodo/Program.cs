@@ -16,8 +16,24 @@ namespace AppNodo
         private static Client cl;
         private static bool cerrarApp = false;
 
+        private static CLI cli;
         static void Main(string[] args)
         {
+            int prt = 5000;
+            if (args.Length>0)
+            {
+                if (args[0].StartsWith("puerto="))
+                {
+                    try
+                    {
+                        prt = Convert.ToInt32(args[0].Split(new string[] { "=" }, StringSplitOptions.RemoveEmptyEntries));
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Parametro '{args[0]}' incorrecto. Puerto de escucha: {prt}");
+                    }
+                }
+            }
             cl = new Client();
             cl.NuevaConexion += Cl_NuevaConexion;
             cl.ConexionTerminada += Cl_ConexionTerminada;
@@ -34,20 +50,20 @@ namespace AppNodo
             {
                 ipAddr = srvr.IP_Local,
                 macAddr = srvr.MAC_Local,
-                id = new Guid().ToString(),
+                id = Guid.NewGuid().ToString(),
                 state = true
             };
             peers = PeerHandler.loadPeersFile();
             PeerHandler.updatePeerData(peers, thisPeer.macAddr, thisPeer);
 
 
-            srvr.Puerto_Del_servidor = 5000;
+            srvr.Puerto_Del_servidor = prt;
             srvr.EscucharConexiones();
             Console.WriteLine($"Esperando conexiones en puerto: {srvr.Puerto_Del_servidor}");
 
 
 
-            CLI cli = new CLI("test >",srvr,cl);
+            cli = new CLI("test >",srvr,cl,peers);
 
             cli.initCLI();
 
@@ -65,6 +81,7 @@ namespace AppNodo
         private static void Cl_DatosRecibidos(byte[] Datos, string Datos_str)
         {
             Console.WriteLine($"Datos recibidos desde {cl.IP_Servidor}:{cl.Puerto_Servidor} : {Datos_str}");
+            cli.printLine("", true);
         }
 
         private static void Cl_Error_Conexion(Exception ex)
@@ -72,7 +89,9 @@ namespace AppNodo
             Console.WriteLine($"Error en la Conexion {ex.Message}");
             Console.WriteLine($"Conexion Terminada Con {cl.IP_Servidor}:{cl.Puerto_Servidor}");
 
+            cli = null;
             cerrarApp = true;
+            
             Console.WriteLine();
             Console.WriteLine("Presione <ENTER> para terminar...");
         }
@@ -80,13 +99,15 @@ namespace AppNodo
         private static void Cl_ConexionTerminada()
         {
             Console.WriteLine($"Conexion Terminada Con {cl.IP_Servidor}:{cl.Puerto_Servidor}");
+            cli.printLine("", true);
 
         }
 
         private static void Cl_NuevaConexion()
         {
             Console.WriteLine($"Conexion establecida con {cl.IP_Servidor}:{cl.Puerto_Servidor}");
-            cl.Enviar_Datos(Protocol.buildMessage(thisPeer.ToString()));
+            cl.Enviar_Datos(Protocol.buildMessage(thisPeer.ToString().Replace("peerInformation", "senderIdentification")));
+            cli.printLine("", true);
         }
 
 
@@ -129,6 +150,7 @@ namespace AppNodo
                                         break;
                                 }
                             }
+                            PeerHandler.savePeersFile(peers);
                         }
                         catch (Peer.PeerDataInvalidException ex)
                         {
@@ -154,6 +176,7 @@ namespace AppNodo
             srvr.Detener_EscuchaDeConexiones();
             srvr = null;
 
+            cli = null;
             cerrarApp = true;
             Console.WriteLine();
             Console.WriteLine("Presione <ENTER> para terminar...");
@@ -163,11 +186,13 @@ namespace AppNodo
         private static void Srvr_ConexionTerminada(System.Net.IPEndPoint ID_Terminal)
         {
             Console.WriteLine("Conexion Terminada: " + ID_Terminal.Address.ToString());
+            cli.printLine("", true);
         }
 
         private static void Srvr_NuevaConexion(System.Net.IPEndPoint ID_Terminal)
         {
             Console.WriteLine("Nueva Conexion Entrante: " + ID_Terminal.Address.ToString());
+            cli.printLine("", true);
         }
 
     }

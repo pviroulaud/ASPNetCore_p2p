@@ -27,7 +27,7 @@ namespace Helper
                 byte[] m= new byte[message.Length - 2];
                 Array.Copy(message, m, message.Length - 2);
                 byte[] crc = Math.CalculoCRC(m);
-                return ((crc[0] == message[message.Length - 1]) && (crc[1] == message[message.Length]));
+                return ((crc[0] == message[message.Length - 2]) && (crc[1] == message[message.Length-1]));
             }
             return false;
         }
@@ -55,7 +55,7 @@ namespace Helper
         {
             if (message.Length > 4) // Para el calculo del CRC16 
             {
-                return (message[message.Length - 2] == 0x0D) ;
+                return (message[message.Length - 3] == 0x0D) ;
             }
             return false;
         }
@@ -71,12 +71,12 @@ namespace Helper
             byte[] m = new byte[header.Length + data.Length + footer.Length];
             byte[] ret = new byte[header.Length + data.Length + footer.Length + 2];
             Array.Copy(header, m, header.Length);
-            Array.Copy(data, m, data.Length);
-            Array.Copy(footer, m, footer.Length);
+            Array.Copy(data, 0, m,header.Length, data.Length);
+            Array.Copy(footer,0, m,header.Length+data.Length, footer.Length);
             byte[] crc = Helper.Math.CalculoCRC(m);
         
             Array.Copy(m, ret, m.Length);
-            Array.Copy(crc, ret, crc.Length);
+            Array.Copy(crc,0, ret, header.Length + data.Length+footer.Length, crc.Length);
 
             return ret;
         }

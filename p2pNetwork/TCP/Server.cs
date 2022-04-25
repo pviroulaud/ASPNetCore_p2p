@@ -30,7 +30,12 @@ namespace TCP
         // delcaro el endpoint del cliente actual
         private IPEndPoint ID_ClienteActual;
 
+        public Server()
+        {
+            MACLocal = GetMacAddress().ToString();
 
+            IPLocal = GetActiveNICIpV4Address();
+        }
 
         #region " ************** Declaracion de Eventos ************************"   
         public delegate void EV_NuevaConexion(IPEndPoint ID_Terminal);
@@ -48,7 +53,7 @@ namespace TCP
         #endregion
 
         #region " ******************** Propiedades *****************************"
-        private Int32 TamBuff_RX = 100;
+        private Int32 TamBuff_RX = 1000;
         public Int32 TamañoBuffer_Recepcion
         {
             get
@@ -84,10 +89,7 @@ namespace TCP
         {
             get
             {
-                string hostname = Dns.GetHostName();
-
-                IPAddress[] estehost = Dns.GetHostAddresses(hostname);
-                IPLocal = estehost[1].ToString();
+         
 
                 return IPLocal;
             }
@@ -99,11 +101,7 @@ namespace TCP
             get
             { 
                 return MACLocal; 
-            }
-            set
-            {
-                MACLocal = GetMacAddress().ToString();
-            }
+            }            
         }
 
         private Boolean Escuchando;
@@ -159,7 +157,7 @@ namespace TCP
             {
                 Escuchando = false;
                 TCP_Listener.Stop();
-                Thread_TCPListener.Abort();
+                Thread_TCPListener=null;//Thread_TCPListener.Abort();
                 Thread_TCPListener = null;
 
                 GC.Collect();
@@ -308,6 +306,7 @@ namespace TCP
                     Array.Clear(BufferDatos, 0, BufferDatos.Length);
                     try
                     {
+                        
                         ret = EsteCliente.SK_Cliente.Receive(BufferDatos);
                         if (ret > 0)
                         {
@@ -348,16 +347,31 @@ namespace TCP
                             break;
                         }
                     }
-                    catch (Exception ex)
+                    catch (SocketException socEx)
                     {
-                        if ((ex.Message != "Subproceso anulado.") &&
-                            (ex.Message != "Se ha forzado la interrupción de una conexión existente por el host remoto"))
+                        if ((socEx.ErrorCode != 10053) &&
+                            (socEx.ErrorCode != 10054) &&
+                            (socEx.Message != "Subproceso anulado.") &&
+                            (socEx.Message != "Se ha forzado la interrupción de una conexión existente por el host remoto") &&
+                            (socEx.Message != "Se ha anulado una conexión establecida por el software en su equipo host.."))
                         {
                             if (Error_Servidor != null)
                             {
-                                Error_Servidor(ex);
+                                Error_Servidor(socEx);
                             }
 
+                        }
+                        if (ConexionTerminada != null)
+                        {
+                            ConexionTerminada((IPEndPoint)ID_De_Este_Cliente);
+                        }
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Error_Servidor != null)
+                        {
+                            Error_Servidor(ex);
                         }
                         if (ConexionTerminada != null)
                         {
@@ -390,7 +404,7 @@ namespace TCP
                 {
                     EsteCliente.SK_Cliente.Close();
                 }
-                EsteCliente.TH_Cliente.Abort();
+                EsteCliente.TH_Cliente=null;//EsteCliente.TH_Cliente.Abort();
 
             }
             catch (Exception ex)
@@ -411,13 +425,41 @@ namespace TCP
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 // Only consider Ethernet network interfaces
-                if (nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet &&
+                if (((nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet) || (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) &&
                     nic.OperationalStatus == OperationalStatus.Up)
                 {
                     return nic.GetPhysicalAddress();
                 }
             }
             return null;
+        }
+        public string GetActiveNICIpV4Address()
+        {
+            string ip = "";
+            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                // Only consider Ethernet network interfaces
+                if (((nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet) || (nic.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)) &&
+                    nic.OperationalStatus == OperationalStatus.Up)
+                {
+                    foreach (var item in nic.GetIPProperties().UnicastAddresses)
+                    {
+                        if (item.Address.AddressFamily== AddressFamily.InterNetwork) // obtiene la IpV4
+                        {
+                            ip = item.Address.ToString();
+                        }
+                    }
+                    
+                    
+                    //string hostname = Dns.GetHostName();
+                    //IPAddress[] estehost = Dns.GetHostAddresses(hostname);
+                    //IPLocal = estehost[1].ToString();
+
+                }
+            }
+
+            
+            return ip;
         }
         #endregion
     }
